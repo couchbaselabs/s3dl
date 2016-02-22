@@ -1,10 +1,12 @@
 from __future__ import division
 
 from concurrent import futures
+import collections
 import functools
 import os
 import signal
 import sys
+import time
 import threading
 
 import boto3
@@ -13,30 +15,46 @@ from boto3.s3 import transfer
 s3_client = boto3.client('s3')
 
 def signal_handler(signal, frame):
-    print('Exiting!')
+    print('\nExiting!')
     os._exit(0)
 
 class ProgressPercentage(object):
     def __init__(self):
-        self._size = 0
-        self._seen_so_far = 0
+        self._size = collections.defaultdict(int)
+        self._seen_so_far = collections.defaultdict(int)
         self._lock = threading.Lock()
+        self._last = 0
 
     def add_file(self, bucket, key):
         with self._lock:
-            self._size += s3_client.head_object(
-                Bucket=bucket, Key=key)['ContentLength']
-        return self
+            uri = "s3://{}/{}".format(bucket, key)
 
-    def __call__(self, bytes_amount):
-        # To simplify we'll assume this is hooked up
-        # to a single filename.
+            self._size[uri] += s3_client.head_object(
+                Bucket=bucket, Key=key)['ContentLength']
+
+        return functools.partial(self.update, uri)
+
+    def update(self, uri, bytes_amount):
         with self._lock:
-            self._seen_so_far += bytes_amount
-            percentage = (self._seen_so_far / self._size) * 100
+            self._seen_so_far[uri] += bytes_amount
+            self.draw()
+
+    def draw(self):
+        if self._last:
+            sys.stdout.write("\033[{}A".format(self._last))
+        self._last = 0
+        for key in sorted(self._size):
+            percentage = (self._seen_so_far[key] / self._size[key]) * 100
             sys.stdout.write(
-                "\r%s / %s  (%.2f%%)" % (self._seen_so_far, self._size, percentage))
-            sys.stdout.flush()
+                "%s %s / %s  (%.2f%%)\n" % (key, self._seen_so_far[key], self._size[key], percentage))
+            self._last += 1
+        percentage = (sum(self._seen_so_far.values())/sum(self._size.values())) * 100
+        sys.stdout.write(
+            "Total %s / %s  (%.2f%%)\n" % (sum(self._seen_so_far.values()), sum(self._size.values()), percentage))
+        self._last += 1
+        sys.stdout.flush()
+
+
 progress = ProgressPercentage()
 
 
@@ -63,9 +81,11 @@ def main():
 
             bucket, key = url[5:].split('/', 1)
             file = key.split('/')[-1]
-            f = functools.partial(download, bucket, key, file, executor)
-            fut.append(lexecutor.submit(f))
-        futures.wait(fut)
+            fut.append(lexecutor.submit(
+                    functools.partial(download, bucket, key, file, executor)))
+
+        while(not all([f.done() for f in fut])):
+            time.sleep(1)
 
 if __name__ == '__main__':
     sys.exit(main())
