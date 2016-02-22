@@ -23,4 +23,4 @@ awscli:
 When installed with pip, s3dl will be appropriately registered and usable
 directly from the command line.
 
-    s3dl s3://<bucket-name>/<key-name>
+    s3dl s3://<bucket-name>/<key-name> s3://<bucket-name2>/<key-name2>
