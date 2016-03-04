@@ -67,6 +67,7 @@ def download(bucket, key, file, executor):
     downloader.download_file(bucket, key, file, s3_client.head_object(
             Bucket=bucket, Key=key)['ContentLength'], {},
                                 callback=progress.add_file(bucket, key))
+
 def main():
     urls = sys.argv[1:]
     def executor(*args, **kwargs):
@@ -77,15 +78,16 @@ def main():
         fut = []
         for url in urls:
             if not url.startswith('s3://'):
-                raise ValueError()
+                raise ValueError("{} is not a valid s3 URI".format(url))
 
             bucket, key = url[5:].split('/', 1)
             file = key.split('/')[-1]
             fut.append(lexecutor.submit(
                     functools.partial(download, bucket, key, file, executor)))
-
         while(not all([f.done() for f in fut])):
             time.sleep(1)
+        [f.result() for f in fut]
+
 
 if __name__ == '__main__':
     sys.exit(main())
