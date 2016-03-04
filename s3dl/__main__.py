@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 
 from concurrent import futures
 import collections
@@ -11,6 +11,10 @@ import threading
 
 import boto3
 from boto3.s3 import transfer
+
+if os.environ.get('S3DL_DEFAULT_PROFILE', ''):
+    boto3.setup_default_session(profile_name=os.environ.get(
+            'S3DL_DEFAULT_PROFILE'))
 
 s3_client = boto3.client('s3')
 
@@ -69,6 +73,10 @@ def download(bucket, key, file, executor):
                                 callback=progress.add_file(bucket, key))
 
 def main():
+    if len(sys.argv) == 1 or '-h' in sys.argv or '--help' in sys.argv:
+        print("Usage: s3dl s3://<bucket>/<key> [s3://<bucket>/<key>] ..",
+              file=sys.stderr)
+
     urls = sys.argv[1:]
     def executor(*args, **kwargs):
         return futures.ThreadPoolExecutor(10)
