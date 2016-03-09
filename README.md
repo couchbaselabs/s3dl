@@ -19,7 +19,7 @@ way to do this is through awscli:
     pip install awscli
     aws configure [--profile profile-name]
 
-s3dl will use AWS profile identified by the S3_DEFAULT_PROFILE environment 
+s3dl will use AWS profile identified by the S3DL_DEFAULT_PROFILE environment 
 variable if set; otherwise it will use the AWS default profile.
 
 ## Usage
