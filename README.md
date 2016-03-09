@@ -12,11 +12,15 @@ Alternatively for development purposes you can install s3dl locally:
     pip install -e s3dl
 
 ### Configuration
-s3dl requires default boto configuration. The easiest way to do this is through
-awscli:
+s3dl requires default boto configuration 
+(http://boto3.readthedocs.org/en/latest/guide/configuration.html). The easiest
+way to do this is through awscli:
 
     pip install awscli
-    aws configure
+    aws configure [--profile profile-name]
+
+s3dl will use AWS profile identified by the S3_DEFAULT_PROFILE environment 
+variable if set; otherwise it will use the AWS default profile.
 
 ## Usage
 
