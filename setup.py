@@ -21,6 +21,6 @@ setup(name='s3dl',
       ],
       entry_points={
         "console_scripts": [
-            "s3dl=s3dl.__main__:main",
+            "s3dl=s3dl.s3dl:main",
         ],
       })

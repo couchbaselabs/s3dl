@@ -28,3 +28,18 @@ When installed with pip, s3dl will be appropriately registered and usable
 directly from the command line.
 
     s3dl s3://<bucket-name>/<key-name> s3://<bucket-name2>/<key-name2>
+
+The --no-clobber (-nc) flag can be used to prevent overwriting files which have
+previously been downloaded:
+
+    $ s3dl s3://my-bucket/my-key.txt
+    s3://my-bucket/my-key.txt 5KiB / 5KiB  (100.00%)
+    Total 5KiB / 5KiB  (100.00%)
+
+    $ ls
+    my-key.txt
+
+    $ s3dl s3://my-bucket/my-key.txt --no-clobber
+    Skipping s3://my-bucket/my-key.txt (no clobber)
+
+    $
