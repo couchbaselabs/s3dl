@@ -106,7 +106,7 @@ def download_file(download):
 def parse_arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('URI',
-                        nargs='+',
+                        nargs='*',
                         help='s3 URIs to download (e.g. s3://<bucket>/<file>)'
     )
     parser.add_argument("-nc",
@@ -122,6 +122,14 @@ def parse_arguments(args):
                         default=".")
 
     args = parser.parse_args(args[1:])
+
+    if not args.URI and not sys.stdin.isatty():
+        # [:-1] in order to remove \n character
+        args.URI = [line[:-1] for line in sys.stdin]
+
+    if not args.URI:
+        parser.print_usage(sys.stderr)
+        print("error: too few arguments")
 
     return args
 

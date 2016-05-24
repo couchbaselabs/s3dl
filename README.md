@@ -42,4 +42,15 @@ previously been downloaded:
     $ s3dl s3://my-bucket/my-key.txt --no-clobber
     Skipping s3://my-bucket/my-key.txt (no clobber)
 
-    $
+If no URLs are specified on the command line then s3dl will check if it is
+being piped into from stdin and will read a list of file to download from
+stdin:
+
+    $ cat urls.txt
+    s3://my-bucket/my-key.txt
+    s3://my-bucket/my-key2.txt
+
+    $ cat urls.txt | s3dl
+    s3://my-bucket/my-key.txt 0.6KiB / 136.5KiB  (0.44%)
+    s3://my-bucket/my-key2.txt 1.7KiB / 143.5KiB  (1.15%)
+    Total 2.2KiB / 280.0KiB  (0.80%)
