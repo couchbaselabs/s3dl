@@ -99,6 +99,10 @@ def download_file(download):
                              callback=progress.add_file(download.bucket,
                                                         download.key))
 
+    if os.path.isfile(download.file_path):
+        os.remove(download.file_path)
+    os.rename(download.download_path, download.file_path)
+
 
 def parse_arguments(args):
     parser = argparse.ArgumentParser()
@@ -187,8 +191,3 @@ def main(args=sys.argv):
         while(not all([f.done() for f in fut])):
             time.sleep(1)
         [f.result() for f in fut]
-
-    for download in downloads:
-        if os.path.isfile(download.file_path):
-            os.remove(download.file_path)
-        os.rename(download.download_path, download.file_path)
