@@ -89,16 +89,12 @@ progress = ProgressPercentage()
 
 
 def download_file(download):
-    downloader = transfer.MultipartDownloader(s3_client,
-                                              transfer.TransferConfig(),
-                                              transfer.OSUtils())
+    downloader = transfer.S3Transfer(s3_client,
+                                     transfer.TransferConfig(),
+                                     transfer.OSUtils())
 
-    downloader.download_file(download.bucket,
-                             download.key,
+    downloader.download_file(download.bucket,download.key,
                              download.download_path,
-                             s3_client.head_object(Bucket=download.bucket,
-                                                   Key=download.key)['ContentLength'],
-                             {},
                              callback=progress.add_file(download.bucket,
                                                         download.key))
 
