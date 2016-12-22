@@ -93,7 +93,8 @@ def download_file(download):
                                      transfer.TransferConfig(),
                                      transfer.OSUtils())
 
-    downloader.download_file(download.bucket,download.key,
+    downloader.download_file(download.bucket,
+                             download.key,
                              download.download_path,
                              callback=progress.add_file(download.bucket,
                                                         download.key))
