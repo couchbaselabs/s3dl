@@ -29,17 +29,29 @@ class ProgressPercentage(object):
     def __init__(self):
         self._size = collections.defaultdict(int)
         self._seen_so_far = collections.defaultdict(int)
+        self._status = collections.defaultdict(str)
         self._lock = threading.Lock()
         self._last = 0
 
     def add_file(self, bucket, key):
         with self._lock:
             uri = "s3://{}/{}".format(bucket, key)
-
+            self._status[uri] = 'Waiting'
             self._size[uri] += s3_client.head_object(
                 Bucket=bucket, Key=key)['ContentLength']
+            self.draw()
 
-        return functools.partial(self.update, uri)
+    def completed(self, bucket, key):
+        with self._lock:
+            uri = "s3://{}/{}".format(bucket, key)
+            self._status[uri] = 'Completed'
+            self.draw()
+
+    def progress_callback(self, bucket, key):
+        with self._lock:
+            uri = "s3://{}/{}".format(bucket, key)
+            self._status[uri] = 'Downloading'
+            return functools.partial(self.update, uri)
 
     def update(self, uri, bytes_amount):
         with self._lock:
@@ -61,13 +73,15 @@ class ProgressPercentage(object):
         return "%.1f%s%s" % (a, 'Yi', suffix), "%.1f%s%s" % (b, 'Yi', suffix)
 
     @classmethod
-    def write_row(cls, key, seen, size):
+    def write_row(cls, key, seen, size, status=''):
         percent = cls.percentage(seen, size)
         seen_str, size_str = cls.sizeof_fmt(seen, size)
-        sys.stdout.write("%s %s / %s  (%.2f%%)\n" % (key,
+        sys.stdout.write("\033[K")
+        sys.stdout.write("%s %s / %s  (%.2f%%) %s\n" % (key,
                                                      seen_str,
                                                      size_str,
-                                                     percent))
+                                                     percent,
+                                                     status))
 
     def draw(self):
         if self._last:
@@ -76,7 +90,8 @@ class ProgressPercentage(object):
         for key in sorted(self._size):
             self.write_row(key,
                            self._seen_so_far[key],
-                           self._size[key])
+                           self._size[key],
+                           status=self._status[key])
 
         self.write_row("Total",
                        sum(self._seen_so_far.values()),
@@ -96,9 +111,9 @@ def download_file(download):
     downloader.download_file(download.bucket,
                              download.key,
                              download.download_path,
-                             callback=progress.add_file(download.bucket,
-                                                        download.key))
-
+                             callback=progress.progress_callback(download.bucket,
+                                                               download.key))
+    progress.completed(download.bucket, download.key)
     if os.path.isfile(download.file_path):
         os.remove(download.file_path)
     os.rename(download.download_path, download.file_path)
@@ -121,6 +136,12 @@ def parse_arguments(args):
                         help="Directory to write files to",
                         action="store",
                         default=".")
+    parser.add_argument("-p",
+                        "--parallelism",
+                        type=int,
+                        help="Number of files to download at once",
+                        action="store",
+                        default=1)
 
     args = parser.parse_args(args[1:])
 
@@ -179,11 +200,14 @@ def main(args=sys.argv):
     for skip in skipped:
         print("Skipping s3://{}/{} (no clobber)".format(skip.bucket, skip.key))
 
-    with futures.ThreadPoolExecutor(len(downloads)) as lexecutor:
+    with futures.ThreadPoolExecutor(arguments.parallelism) as lexecutor:
+
 
         # Submit downloads to executor
         fut = []
         for download in downloads:
+            progress.add_file(download.bucket,
+                              download.key)
             fut.append(lexecutor.submit(
                     functools.partial(download_file,
                                       download)))
