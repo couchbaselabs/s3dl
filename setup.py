@@ -17,7 +17,7 @@ setup(name='s3dl',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          'boto3==1.3.0'
+          'boto3>1.3.0'
       ],
       entry_points={
         "console_scripts": [
