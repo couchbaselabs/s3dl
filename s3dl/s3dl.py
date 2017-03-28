@@ -122,9 +122,15 @@ def download_file(download):
 
 
 def parse_arguments(args):
+    class UniqueAppendAction(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            unique_values = set(values)
+            setattr(namespace, self.dest, unique_values)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('URI',
                         nargs='*',
+                        action=UniqueAppendAction,
                         help='s3 URIs to download (e.g. s3://<bucket>/<file>)')
     parser.add_argument("-nc",
                         "--no-clobber",
@@ -155,6 +161,7 @@ def parse_arguments(args):
         print("error: too few arguments")
 
     return args
+
 
 
 class DownloadInfo(object):
