@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 
 from concurrent import futures
+from distutils.dir_util import mkpath
 import argparse
 import collections
 import functools
@@ -185,9 +186,10 @@ class DownloadInfo(object):
         if '@' in bucket:
             bucket = bucket.split('@')[-1]
 
-        # Filename
-        filename = key.split('/')[-1]
-        file_path = os.path.join(download_directory, filename)
+        dir_path = os.path.join(download_directory, bucket, *key.split('/')[:-1])
+        mkpath(dir_path)
+
+        file_path = os.path.join(download_directory, bucket, key)
 
         return cls(bucket, key, file_path, no_clobber)
 
