@@ -1,4 +1,4 @@
-import s3dl
+from . import s3dl
 import sys
 
 if __name__ == '__main__':
