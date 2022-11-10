@@ -1,5 +1,3 @@
-
-
 from concurrent import futures
 import argparse
 import collections
