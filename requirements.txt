@@ -1,2 +1,1 @@
-boto3
-futures
+boto3==1.26.21
